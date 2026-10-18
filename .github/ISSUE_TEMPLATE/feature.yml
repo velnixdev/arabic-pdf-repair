@@ -1,0 +1,11 @@
+name: Support a new kind of font
+description: Suggest a font family, code page or PDF producer to support.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What should be supported
+      description: Font names, the program that made the PDF, and what copying gives today.
+    validations:
+      required: true

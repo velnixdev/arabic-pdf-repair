@@ -1,0 +1,39 @@
+name: Arabic still copies badly
+description: A PDF whose Arabic text is still wrong after the repair, or a crash.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "**Do not attach private documents.** A one-page sample with no personal data, or the font list, is enough."
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: "0.3.2"
+    validations:
+      required: true
+  - type: dropdown
+    id: how
+    attributes:
+      label: How you ran it
+      options: [CLI (npx), Node.js API, Browser]
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: What happened
+      description: The CLI output, and a short piece of the text you copied before and after.
+    validations:
+      required: true
+  - type: textarea
+    id: fonts
+    attributes:
+      label: Fonts in the file
+      description: Output of `pdffonts file.pdf` (from poppler-utils), if you have it.
+      render: text
+  - type: input
+    id: producer
+    attributes:
+      label: Program that made the PDF
+      description: Shown in your PDF reader's document properties, for example "PDFCreator 1.2".

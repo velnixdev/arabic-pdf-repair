@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Please do not open a public issue. Email **support@genpdf.com** with the subject `arabic-pdf-repair security`, a description, and if possible a PDF or script that shows the problem. You will get an answer within 7 days.
+Please do not open a public issue. Use [Report a vulnerability](https://github.com/velnixdev/arabic-pdf-repair/security/advisories/new) on GitHub, or email **support@genpdf.com** with the subject `arabic-pdf-repair security`, a description, and if possible a PDF or script that shows the problem. You will get an answer within 7 days.
 
 ## Supported versions
 
