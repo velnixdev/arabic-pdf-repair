@@ -1,6 +1,6 @@
 {
   "name": "arabic-pdf-repair",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Fix copy/paste and text extraction of Arabic in old PDFs whose fonts have glyph names but no usable ToUnicode map.",
   "license": "Apache-2.0",
   "homepage": "https://genpdf.com",
