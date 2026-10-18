@@ -5,8 +5,8 @@ on:
   push:
     tags: ["v*"]
 permissions:
-  contents: read
-  id-token: write
+  contents: write # the GitHub release
+  id-token: write # npm trusted publishing
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -27,3 +27,11 @@ jobs:
       - name: Tag matches package.json
         run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
       - run: npm publish --access public --provenance
+      - name: GitHub release from the changelog entry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="## $version" '$0 == v {on = 1; next} /^## / {on = 0} on' CHANGELOG.md > notes.md
+          printf '\nnpm: https://www.npmjs.com/package/arabic-pdf-repair/v/%s\n' "$version" >> notes.md
+          gh release create "$GITHUB_REF_NAME" --title "$version" --notes-file notes.md --verify-tag

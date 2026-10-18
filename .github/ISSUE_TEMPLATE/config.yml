@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/velnixdev/arabic-pdf-repair/security/advisories/new
+    about: Please report vulnerabilities privately, not as an issue.
+  - name: Edit Arabic PDFs online
+    url: https://genpdf.com
+    about: Editing text is outside this package. GenPDF does it in the browser.

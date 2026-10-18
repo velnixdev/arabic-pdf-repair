@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+
+- Documentation rewritten: quick start, API reference, what it fixes, limits, safety, FAQ, and a detailed [how it works](https://github.com/velnixdev/arabic-pdf-repair/blob/main/docs/how-it-works.md) page.
+- Contributing guide, security policy, issue templates.
+- No code changes.
+
 ## 0.3.1
 
 - Published from GitHub Actions with npm provenance (trusted publishing).

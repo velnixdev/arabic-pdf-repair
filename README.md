@@ -1,21 +1,46 @@
 # arabic-pdf-repair
 
-[![npm](https://img.shields.io/npm/v/arabic-pdf-repair)](https://www.npmjs.com/package/arabic-pdf-repair) [![CI](https://github.com/velnixdev/arabic-pdf-repair/actions/workflows/ci.yml/badge.svg)](https://github.com/velnixdev/arabic-pdf-repair/actions/workflows/ci.yml) [![provenance](https://img.shields.io/badge/npm-provenance-blue)](https://www.npmjs.com/package/arabic-pdf-repair#provenance) [![license](https://img.shields.io/npm/l/arabic-pdf-repair)](LICENSE)
+[![npm](https://img.shields.io/npm/v/arabic-pdf-repair)](https://www.npmjs.com/package/arabic-pdf-repair)
+[![CI](https://github.com/velnixdev/arabic-pdf-repair/actions/workflows/ci.yml/badge.svg)](https://github.com/velnixdev/arabic-pdf-repair/actions/workflows/ci.yml)
+[![provenance](https://img.shields.io/badge/npm-provenance-blue)](https://www.npmjs.com/package/arabic-pdf-repair#provenance)
+[![license](https://img.shields.io/npm/l/arabic-pdf-repair)](LICENSE)
 
-Fix Arabic text that comes out as garbage when you copy, search or extract it from an old PDF.
-
-PDFs made by older Windows print-to-PDF tools (PDFCreator, Ghostscript, old Acrobat Distiller) store Arabic in one-byte TrueType fonts. The page looks perfect, but the file never says which letter each glyph is, so copying gives control characters, boxes, or Hebrew letters.
-
-`arabic-pdf-repair` works out which letter each glyph is, from the glyph names the font carries, from its Arabic code page (Windows-1256, ISO-8859-6, Mac Arabic) or from the known layout of Diwan XT fonts, and writes a complete `/ToUnicode` map for it. The page is not redrawn: it looks exactly the same, but the text layer is correct.
+**Make Arabic text in old PDFs copyable, searchable and extractable again, without changing how the pages look.**
 
 ```text
-before (copied from the PDF):  ␁␂␃␄␅ ␊␋␃␌␆␇␈␉
-after  (copied from the fixed PDF):  بطاقة كتاب نحو
+Copied from the original PDF:   ÈØÇÞÉ ßÊÇÈ äÍæ
+Copied from the repaired PDF:   بطاقة كتاب نحو
 ```
 
-## Why
+[العربية](#بالعربية) · [Quick start](#quick-start) · [API](#api) · [What it fixes](#what-it-fixes) · [Limits](#limits) · [FAQ](#faq) · [How it works](docs/how-it-works.md)
 
-Copy Arabic out of a PDF and you often get gibberish: letters in reverse order, disconnected forms, boxes, accented Latin characters, or Hebrew. The page looks fine because the PDF draws glyphs, but the file never says which Unicode letter each glyph is (the `/ToUnicode` map is missing, wrong or partial). Search, copy, screen readers and text extraction all depend on that map. This package writes it, and does not touch how the page looks.
+---
+
+## The problem
+
+Many PDFs made by older Windows tools (PDFCreator, Ghostscript, old Acrobat Distiller, Arabic word processors) look perfect on screen. But when you copy the Arabic you get:
+
+- accented Latin letters: `ÇáÚÑÈíÉ`
+- boxes, control characters or Hebrew letters
+- nothing at all in search, screen readers and text extraction
+
+The page is drawn from font glyphs. What is missing is the `/ToUnicode` map that tells a reader which letter each glyph is. This package rebuilds that map and touches nothing else, so the pages look exactly the same.
+
+## Quick start
+
+No install needed:
+
+```sh
+npx arabic-pdf-repair old.pdf
+```
+
+```text
+fixed LegacyArabic: 41 codes
+wrote old.repaired.pdf
+```
+
+- Choose the output name with a second argument: `npx arabic-pdf-repair old.pdf fixed.pdf`.
+- If the file needs nothing, it prints `nothing to repair` and writes nothing.
 
 ## Install
 
@@ -23,90 +48,149 @@ Copy Arabic out of a PDF and you often get gibberish: letters in reverse order, 
 npm install arabic-pdf-repair
 ```
 
-Node 20 or newer. The only runtime dependency is [pdf-lib](https://pdf-lib.js.org/).
+- Node.js 20 or newer. ES module only (`import`, not `require`).
+- One runtime dependency: [pdf-lib](https://pdf-lib.js.org/).
+- The library uses no Node APIs, so it also runs in the browser and in web workers. Only the CLI reads and writes files.
 
 ## API
+
+### `repairTextLayer(bytes)`
 
 ```ts
 import { readFile, writeFile } from "node:fs/promises";
 import { repairTextLayer } from "arabic-pdf-repair";
 
-const result = await repairTextLayer(new Uint8Array(await readFile("old.pdf")));
+const input = new Uint8Array(await readFile("old.pdf"));
+const result = await repairTextLayer(input);
+
 if (result) {
   await writeFile("fixed.pdf", result.bytes);
-  console.log(result.fonts); // [{ name: "LegacyArabic", codes: 11 }]
+  console.log(result.fonts); // [{ name: "LegacyArabic", codes: 41 }]
+} else {
+  console.log("nothing to repair");
 }
 ```
 
-`repairTextLayer(bytes: Uint8Array): Promise<TextRepair | null>`
+| | |
+|---|---|
+| **Takes** | `Uint8Array`: the bytes of a PDF file. |
+| **Returns** | `Promise<TextRepair \| null>` |
+| `result.bytes` | The repaired PDF. |
+| `result.fonts` | Each font that was fixed, as `{ name, codes }`. `codes` is how many character codes got their letters. |
+| `null` | Nothing needed repair, or the file cannot be rewritten (damaged, or it needs a password to open). |
 
-- Returns `{ bytes, fonts }`: the repaired file, and for each fixed font its name and how many character codes got their letters.
-- Returns `null` when nothing needed repair, or the file cannot be rewritten (damaged, or it needs a password to open). Running it on its own output also returns `null`.
+It does not throw on a broken PDF: it returns `null`. Running it again on its own output also returns `null`.
 
-`arabicGlyphName(name: string): { text: string; certain: boolean } | null` is the underlying lookup: the Arabic text a glyph name stands for (`afii62761` gives `ب`, `inhaa` gives `ح`). `certain` is `false` for names another script also uses, such as `alef`.
+### `arabicGlyphName(name)`
 
-## CLI
+The lookup underneath: which Arabic text a glyph name stands for.
 
-```sh
-npx arabic-pdf-repair in.pdf [out.pdf]
+```ts
+import { arabicGlyphName } from "arabic-pdf-repair";
+
+arabicGlyphName("afii62761"); // { text: "ب", certain: true }
+arabicGlyphName("inhaa");     // { text: "ح", certain: true }
+arabicGlyphName("alef");      // { text: "ا", certain: false }  Hebrew fonts use this name too
+arabicGlyphName("A");         // null
 ```
 
-Prints each font it fixed and writes `out.pdf` (default: `in.repaired.pdf`). Prints `nothing to repair` when the file needs nothing.
+### Repair a whole folder
 
-## How it works
+```ts
+import { readdir, readFile, writeFile } from "node:fs/promises";
+import { repairTextLayer } from "arabic-pdf-repair";
 
-1. A font qualifies when its `/Encoding /Differences` array names at least three codes with Arabic glyph names. The names come in several families: Microsoft's `afii62xxx` joining forms, Adobe's `afii57xxx` letters, Monotype's `inhaa`, `midsad`, `fnalefmaqsurah`, Unicode-style `uniFE91`, and plain words such as `behmedial`.
-2. Each name is mapped to its Arabic letters; a joining form (initial, medial, final) is read as its base letter, and ligatures such as lam-alef as two letters.
-3. Names that Hebrew shares (`alef`, `kaf`, `mem`...) are trusted only inside a font that is plainly Arabic by its other names.
-4. One known trap: Microsoft's fonts call the initial kaf `afii57410`, which Adobe's list gives to alef with madda. The glyph's own bounding box decides: an alef is a tall narrow stem, a kaf is not.
-5. Diwan's Arabic XT fonts (`AXtManal`, `AXtMuna`, `AXtAmineFont`...) carry no useful names: each one-byte code stands for a fixed letter or joining form (ASMO 449 in the low half). Those codes are read from the font's cmap (TrueType), its CIDToGIDMap (Type0) or its encoding (Type 1). A glyph is read as alef only if it is tall, and Kufi layouts are left alone.
-6. A glyph whose name contradicts its shape (a dash called `I`, a space called `less`) is read by the shape it draws, in documents that are being repaired.
-7. Files protected with RC4, AES-128 or AES-256 (revisions 5 and 6) that open without a password are repaired and stay protected.
-8. Arabic drawn in Latin slots (new in 0.3.0): a simple TrueType font with no `/ToUnicode` whose codes are an 8-bit Arabic code page (Windows-1256, ISO-8859-6 or Mac Arabic) while the PDF says WinAnsi reads as `ÇáÚÑÈíÉ`. The package scans the strings each font actually draws (page contents and form XObjects) and uses a code page only when they read as real Arabic by it: 90% of the high bytes Arabic, Arabic letters at least 60% of all letters, frequent Arabic letter pairs at least 35% of the pairs (in either direction, for visual-order lines), and any code read as alef must draw a tall stem. Latin text with accents is left alone.
-9. CFF copies of XT fonts (new in 0.3.0): Type 1C fonts whose glyphs are called `g62`, and CID-keyed CFF fonts, keep the original glyph number but no letter. The glyph order of the XT families gives the letter, accepted only when the whole font passes the same Arabic pair-statistics check. For CID fonts it only fills codes the font's own `/ToUnicode` leaves out; existing entries are never overwritten.
-10. A new `/ToUnicode` CMap is written for the font, keeping any Arabic the producer had already mapped correctly.
+for (const name of await readdir("in")) {
+  if (!name.toLowerCase().endsWith(".pdf")) continue;
+  const result = await repairTextLayer(new Uint8Array(await readFile(`in/${name}`)));
+  if (result) await writeFile(`out/${name}`, result.bytes);
+}
+```
+
+## What it fixes
+
+| Fonts in the PDF | What you get when copying | Since |
+|---|---|---|
+| One-byte TrueType or Type 1 fonts with Arabic glyph names (`afii57xxx`, `afii62xxx`, `uniFE91`, `behmedial`, Monotype names) | control characters, boxes, Hebrew | 0.1.0 |
+| Diwan Arabic XT fonts (`AXtManal`, `AXtMuna`, …) | Latin letters and symbols | 0.2.0 |
+| Arabic stored in Latin slots: Windows-1256, ISO-8859-6 or Mac Arabic codes that the PDF calls WinAnsi | `ÇáÚÑÈíÉ` | 0.3.0 |
+| CFF copies of XT fonts (glyphs called `g62`, CID-keyed CFF) | nothing, or wrong letters | 0.3.0 |
+
+It also handles:
+
+- **Encrypted files** that open without a password (RC4, AES-128, AES-256). They stay encrypted.
+- **Partly correct maps.** Letters the producer already mapped correctly are kept. In CID fonts it only fills the gaps.
+- **Persian and Urdu letters** that these code pages contain (پ چ ژ گ ک ی ٹ ڈ ڑ ے).
 
 ## Limits
 
-- A font is fixed only when its letters can be known for sure: by glyph names, by an Arabic code page that the drawn text confirms, or by a known XT layout. Anything else is left alone rather than guessed.
-- It does not OCR: scanned pages that are only pictures have no text to repair.
-- It does not change how the page looks, and it does not reorder text. Reading order in the extracted text is what your PDF reader produces.
-- Files that need a password to open, and badly damaged files, return `null`.
-- The map gives each code its letter, but readers differ in how they order a letter and its hamza or madda mark, and some XT punctuation codes are not mapped yet.
+- **It only fixes what it can prove.** A font is changed only when its letters are shown by glyph names, by a code page that the drawn text confirms, or by a known XT layout. Anything uncertain is left alone, never guessed.
+- **No OCR.** Scanned pages are pictures, so there is no text to repair.
+- **No reordering.** The order of extracted text is decided by your PDF reader.
+- **Digital signatures break.** The file is rewritten, so a signed PDF's signature no longer validates. Keep the signed original.
+- **Password-protected files** (needing a password to open) and badly damaged files return `null`.
+- Readers differ in how they order a letter and its hamza or madda mark. A few XT punctuation codes are not mapped yet.
 
-## Development
+## Is it safe to run on my files?
 
-```sh
-pnpm install
-pnpm typecheck
-pnpm test
-pnpm build
-```
+- **The pages look exactly the same.** Only `/ToUnicode` maps are added or completed. Page drawing, fonts and images are not changed.
+- **Nothing leaves your machine.** No network calls, no telemetry.
+- **Your original file is kept.** The CLI writes a new file unless you name the original as the output.
+- **Releases are verifiable.** Every version from 0.3.1 on is built and published by GitHub Actions from this repository, with [npm provenance](https://docs.npmjs.com/generating-provenance-statements). Check it with `npm audit signatures`.
 
-All fixtures are built in code (no PDFs are checked in). The tests build legacy-style PDFs in memory from a bundled font (Noto Naskh Arabic, SIL Open Font License, see `test/fixtures/OFL.txt`) and check that pdf.js extracts garbage before the repair and the expected Arabic after it.
+## FAQ
 
-## Releasing
+**Why not OCR the PDF instead?**
+OCR re-reads the picture and makes mistakes, especially with Arabic joining forms and diacritics. The fonts in these files already say which glyph is which letter. Reading that is exact, and takes milliseconds.
 
-Releases are published by GitHub Actions with npm provenance (trusted publishing, no tokens). Bump `version` in `package.json`, add a `CHANGELOG.md` entry, then push a matching tag:
+**Does the file size change?**
+A little. The file is saved again as a whole, and each repaired font gets a small map (a few kilobytes).
 
-```sh
-git tag v0.3.2 && git push origin main v0.3.2
-```
+**My file still copies badly. What now?**
+Open an [issue](https://github.com/velnixdev/arabic-pdf-repair/issues/new/choose) with the font names (`pdffonts file.pdf` lists them). If you can, attach a sample page with no private content.
 
-The workflow refuses a tag that does not match `package.json`.
+**Can I edit the Arabic text, not only copy it?**
+That is outside this package. [GenPDF](https://genpdf.com) edits Arabic PDFs in the browser.
 
-## Security
+## How it works
 
-See [SECURITY.md](SECURITY.md).
+In short: it finds fonts with no usable `/ToUnicode` map, works out each glyph's letter from what the font carries, checks that against the text the pages actually draw, and writes a new map. The full rules are in [docs/how-it-works.md](docs/how-it-works.md).
+
+## Contributing
+
+Bug reports and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers setup, tests and releases.
+Please report security problems privately: see [SECURITY.md](SECURITY.md).
 
 ## License
 
-Apache-2.0. See `LICENSE` and `NOTICE`.
+[Apache-2.0](LICENSE). Third-party attributions are in [NOTICE](NOTICE).
 
-Made by GenPDF — edit Arabic PDFs in your browser at https://genpdf.com
+Made by [GenPDF](https://genpdf.com).
 
 ---
 
 ## بالعربية
 
-عند نسخ نص عربي من ملفات PDF القديمة (التي أنشأتها برامج مثل PDFCreator أو Ghostscript) يظهر نص مشوّه. تقرأ هذه المكتبة أسماء الحروف داخل الخطوط وتكتب جدول ToUnicode كاملاً، فيُنسخ النص صحيحاً دون أن يتغيّر شكل الصفحة.
+<div dir="rtl">
+
+**إصلاح النص العربي في ملفات PDF القديمة ليصبح قابلاً للنسخ والبحث والاستخراج، دون أي تغيير في شكل الصفحات.**
+
+عند نسخ نص عربي من ملفات PDF أنشأتها برامج قديمة (مثل PDFCreator أو Ghostscript أو برامج النشر العربية) يظهر نص مشوّه مثل `ÇáÚÑÈíÉ` أو مربعات أو حروف عبرية. السبب أن الملف لا يحتوي على جدول `ToUnicode` الذي يربط كل شكل بالحرف الذي يمثّله.
+
+تكتب هذه المكتبة هذا الجدول اعتماداً على أسماء الأشكال داخل الخط، أو على صفحة الترميز العربية (Windows-1256 وغيرها)، أو على ترتيب خطوط Diwan XT المعروف.
+
+**طريقة الاستخدام:**
+
+</div>
+
+```sh
+npx arabic-pdf-repair old.pdf
+```
+
+<div dir="rtl">
+
+- لا تُرسَل الملفات إلى أي خادم، فكل شيء يعمل على جهازك.
+- لا يُعدَّل أي خط إلا عند التأكد من حروفه، ولا يُخمَّن شيء.
+- لا تقوم المكتبة بالتعرّف الضوئي على الحروف (OCR)، فالصفحات الممسوحة ضوئياً صور وليست نصاً.
+
+</div>
