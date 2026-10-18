@@ -1,10 +1,12 @@
 # arabic-pdf-repair
 
+[![npm](https://img.shields.io/npm/v/arabic-pdf-repair)](https://www.npmjs.com/package/arabic-pdf-repair) [![CI](https://github.com/velnixdev/arabic-pdf-repair/actions/workflows/ci.yml/badge.svg)](https://github.com/velnixdev/arabic-pdf-repair/actions/workflows/ci.yml) [![provenance](https://img.shields.io/badge/npm-provenance-blue)](https://www.npmjs.com/package/arabic-pdf-repair#provenance) [![license](https://img.shields.io/npm/l/arabic-pdf-repair)](LICENSE)
+
 Fix Arabic text that comes out as garbage when you copy, search or extract it from an old PDF.
 
 PDFs made by older Windows print-to-PDF tools (PDFCreator, Ghostscript, old Acrobat Distiller) store Arabic in one-byte TrueType fonts. The page looks perfect, but the file never says which letter each glyph is, so copying gives control characters, boxes, or Hebrew letters.
 
-`arabic-pdf-repair` reads the glyph names those fonts do carry and writes a complete `/ToUnicode` map for them. The page is not redrawn: it looks exactly the same, but the text layer is correct.
+`arabic-pdf-repair` works out which letter each glyph is, from the glyph names the font carries, from its Arabic code page (Windows-1256, ISO-8859-6, Mac Arabic) or from the known layout of Diwan XT fonts, and writes a complete `/ToUnicode` map for it. The page is not redrawn: it looks exactly the same, but the text layer is correct.
 
 ```text
 before (copied from the PDF):  ␁␂␃␄␅ ␊␋␃␌␆␇␈␉
@@ -66,7 +68,7 @@ Prints each font it fixed and writes `out.pdf` (default: `in.repaired.pdf`). Pri
 
 ## Limits
 
-- Only fonts that carry glyph names are fixed. Fonts with neither names nor a usable map are left alone.
+- A font is fixed only when its letters can be known for sure: by glyph names, by an Arabic code page that the drawn text confirms, or by a known XT layout. Anything else is left alone rather than guessed.
 - It does not OCR: scanned pages that are only pictures have no text to repair.
 - It does not change how the page looks, and it does not reorder text. Reading order in the extracted text is what your PDF reader produces.
 - Files that need a password to open, and badly damaged files, return `null`.
@@ -81,7 +83,21 @@ pnpm test
 pnpm build
 ```
 
-All fixtures are built in code (no PDFs are checked in). The tests build legacy-style PDFs in memory from a bundled font (Noto Naskh Arabic, SIL Open Font License, see `test/fixtures/OFL.txt`) and checks that pdf.js extracts garbage before the repair and the expected Arabic after it.
+All fixtures are built in code (no PDFs are checked in). The tests build legacy-style PDFs in memory from a bundled font (Noto Naskh Arabic, SIL Open Font License, see `test/fixtures/OFL.txt`) and check that pdf.js extracts garbage before the repair and the expected Arabic after it.
+
+## Releasing
+
+Releases are published by GitHub Actions with npm provenance (trusted publishing, no tokens). Bump `version` in `package.json`, add a `CHANGELOG.md` entry, then push a matching tag:
+
+```sh
+git tag v0.3.2 && git push origin main v0.3.2
+```
+
+The workflow refuses a tag that does not match `package.json`.
+
+## Security
+
+See [SECURITY.md](SECURITY.md).
 
 ## License
 
