@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.3
+
+- README: a demo GIF, a before/after screenshot and a search screenshot, all made from a synthetic example certificate.
+- `examples/certificate.pdf` (broken text layer) and `examples/certificate.repaired.pdf`, rebuilt with `node scripts/make-example.ts`.
+- No code changes.
+
 ## 0.3.2
 
 - Documentation rewritten: quick start, API reference, what it fixes, limits, safety, FAQ, and a detailed [how it works](https://github.com/velnixdev/arabic-pdf-repair/blob/main/docs/how-it-works.md) page.

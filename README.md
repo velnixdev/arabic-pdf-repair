@@ -7,12 +7,11 @@
 
 **Make Arabic text in old PDFs copyable, searchable and extractable again, without changing how the pages look.**
 
-```text
-Copied from the original PDF:   ÈØÇÞÉ ßÊÇÈ äÍæ
-Copied from the repaired PDF:   بطاقة كتاب نحو
-```
+<p align="center">
+  <img src="https://raw.githubusercontent.com/velnixdev/arabic-pdf-repair/main/docs/images/demo.gif" width="900" alt="The CLI repairs certificate.pdf. Text copied from the original pastes as boxes and wrong letters; the same text copied from the repaired file pastes as correct Arabic.">
+</p>
 
-[العربية](#بالعربية) · [Quick start](#quick-start) · [API](#api) · [What it fixes](#what-it-fixes) · [Limits](#limits) · [FAQ](#faq) · [How it works](docs/how-it-works.md)
+[العربية](#بالعربية) · [Example](#example) · [Quick start](#quick-start) · [API](#api) · [What it fixes](#what-it-fixes) · [Limits](#limits) · [FAQ](#faq) · [How it works](docs/how-it-works.md)
 
 ---
 
@@ -25,6 +24,22 @@ Many PDFs made by older Windows tools (PDFCreator, Ghostscript, old Acrobat Dist
 - nothing at all in search, screen readers and text extraction
 
 The page is drawn from font glyphs. What is missing is the `/ToUnicode` map that tells a reader which letter each glyph is. This package rebuilds that map and touches nothing else, so the pages look exactly the same.
+
+## Example
+
+[`examples/certificate.pdf`](examples/certificate.pdf) is a synthetic one-page certificate whose text layer is broken the way old Windows tools left it. [`examples/certificate.repaired.pdf`](examples/certificate.repaired.pdf) is the same file after `npx arabic-pdf-repair`. Both pages render pixel for pixel the same; only the copied text changes.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/velnixdev/arabic-pdf-repair/main/docs/images/before-after.png" width="800" alt="The same certificate in two PDF viewers, fully selected. Pasted from the original: boxes and wrong letters. Pasted from the repaired file: the fourteen lines of the certificate in correct Arabic.">
+</p>
+
+Search works too: the word التعلم has no match in the original and one match in the repaired file.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/velnixdev/arabic-pdf-repair/main/docs/images/search.png" width="800" alt="Searching both files for the Arabic word التعلم: no matches in the original, one highlighted match in the repaired file.">
+</p>
+
+Everything in the example is fictional. Rebuild it with `node scripts/make-example.ts` (Node 22.18 or newer).
 
 ## Quick start
 
