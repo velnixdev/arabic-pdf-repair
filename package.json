@@ -1,6 +1,6 @@
 {
   "name": "arabic-pdf-repair",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Make Arabic text in old PDFs copyable and searchable again (glyph names, Windows-1256 and Latin-slot fonts, Diwan XT) without changing how pages look.",
   "license": "Apache-2.0",
   "homepage": "https://genpdf.com",

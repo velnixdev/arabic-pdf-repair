@@ -15,7 +15,7 @@ pnpm build
 
 ## Tests
 
-- No PDFs are checked in. Tests build legacy-style PDFs in memory from a bundled font (Noto Naskh Arabic, SIL Open Font License, see `test/fixtures/OFL.txt`).
+- No PDFs are checked in, except the synthetic examples in `examples/`, which are generated from fictional text by `node scripts/make-example.ts`. Tests build legacy-style PDFs in memory from a bundled font (Noto Naskh Arabic, SIL Open Font License, see `test/fixtures/OFL.txt`).
 - Each test checks that pdf.js extracts garbage before the repair and the expected Arabic after it.
 - A fix should come with a test that fails without it.
 
