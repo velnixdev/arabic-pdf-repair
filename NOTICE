@@ -1,0 +1,9 @@
+arabic-pdf-repair
+Copyright 2026 GenPDF (https://genpdf.com)
+
+This product includes software developed at GenPDF.
+
+The table of Arabic glyph names in src/glyphNames.ts follows the names of the
+Adobe Glyph List (afii57xxx), Copyright 1997-2015 Adobe Systems Incorporated,
+redistributed under the BSD 3-Clause License:
+https://github.com/adobe-type-tools/agl-aglfn/blob/master/LICENSE.md
